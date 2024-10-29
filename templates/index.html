@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Manipulation</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+	<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script>
+        function checkFileSelected() {
+            var fileInput = document.getElementById('file');
+            var deleteButton = document.getElementById('deleteColumnsButton');
+            if (fileInput.files.length > 0) {
+                deleteButton.disabled = false;
+                deleteButton.classList.remove('disabled');
+            } else {
+                deleteButton.disabled = true;
+                deleteButton.classList.add('disabled');
+            }
+        }
+    </script>
+</head>
+<body>
+<div class="container">
+<main>
+    <h1> 10 &#37; Tool</h1>
+	
+	<hr>
+	<h4>This tool does the following:</h4>
+	<br>
+    <ol>
+        <li>Deletes duplicated rows </li>
+        <li>Deletes <i><u>Preview</u></i> &#38; <i><u>Override</u></i> rows</li>
+        <li>Deletes unwanted columns</li>
+        <li>Converts <i><u>.txt</u></i> or <i><u>.xls</u></i> files to <i><u></u>.csv</u></i></li>
+    </ol><hr>
+
+    <h6><i>Tool checks if file selected has required column names. If file is not correct, the tool displays a message notifying user and dumps it into the census_incorrect folder.</i></h6>
+
+    
+
+    <h4>How to use the tool? See Instructions below:</h4>
+
+	<ol>
+	<li>Click the &#34; <b>Choose File</b> &#34; button to upload a file.</li>
+	<li>After selecting the file, click the &#34; <b>Upload</b> &#34; button. The file will be added to an &#34; <b>Uploads</b> &#34; folder.
+	<br><i>The  folder will be created in the same directory as this application</i>.  </li>
+	<li>Next, select the &#34; <b>Delete Columns</b> &#34; button.<br>
+	&nbsp; The &#34; <b>Delete Columns</b> &#34; button will only be enabled if a <b>valid</b> Excel or CSV file is selected 
+    </i>.<br></li>
+	</ol>
+	<hr>
+    <form method="post" enctype="multipart/form-data">
+        <fieldset>
+            <legend>Upload File:</legend>
+            <label for="file">Choose a file:</label>
+            <input type="file" name="file" id="file">
+            <input type="submit" value="Upload" class="btn btn-primary mt-2">
+        </fieldset>
+    </form>
+    <!-- Display flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+        
+               <span style="color: red;"> <div class="alert alert-{{ category }}"><h4>
+                    {{ message }}</h4>
+                </div></span>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <hr>
+    
+    
+    <h2>Delete Options:</h2>
+    <form method="post" action="{{ url_for('delete_columns_page') }}">
+        <input type="submit" value="Delete Columns" id="deleteColumnsButton" class="btn btn-danger {% if not valid_file_uploaded %}disabled{% endif %}" {% if not valid_file_uploaded %}disabled{% endif %}>
+    </form>
+
+
+
+	</main>
+</div>
+</body>
+</html>

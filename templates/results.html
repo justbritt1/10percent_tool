@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>Results</title>
+</head>
+<body>
+<div class="container">
+<main>
+    <h1>Results</h1>
+	
+	
+	<br>
+	<hr>
+	<p><b>Tool instructions continued below:</b></p>
+	<p>Results of deleting Columns and Rows<i>,if applied,</i> appear below   </p>
+	<p>
+	<ul>
+	<li>Click the &#34; <b>Generate File</b> &#34; button to download results.<br>
+	 <ul> 
+	 <li>If the correct Census assignment was used, the generated file will be downloaded to 
+	 a &#34; <b>census_correct</b> &#34; folder.</li>
+	 <li>If &#34; <b>Orientation Activity</b> &#34;was <i>NOT</i> used.
+	 The file will be saved in a &#34; <b>census_incorrect</b> &#34; folder.
+	 </li>
+
+	 </ul>
+	</ul>
+		 <p>A message will appear below the &#34; <b>Generate File</b> &#34; button showing results of the operation</p>
+	<p><i>The created folder&#40;s&#41; will be created in the same directory as this application</i>.</p>
+	<hr><br>
+
+    <!-- Display the count of users -->
+    <p>Total unique users: {{ user_count }}</p>
+
+    <!-- Display the updated DataFrame -->
+    {{ df_updated|safe }}
+
+    <br>
+
+    <!-- Form to download the updated file -->
+    <form method="post" action="{{ url_for('download') }}">
+        <!--<label for="filename">Enter filename to save as (without extension):</label>
+        <input type="text" id="filename" name="filename" size="30" placeholder="2024FA_CSC_110_1000_Census"> -->
+
+        <br><p>The actual file name will be assigned to the new generated file</p>
+        <input type="submit" value="Generate File" name='download'>
+    </form><br>
+	<div>
+		<p>
+		<b>
+		{% if save == 'Orientation activity Invalid or NOT consistent  !  '%}
+			<span style="color: red;">{{ save }}</span>
+		{% elif save == 'One or multiple students do not have a grade!' %}
+			<span style="color: red;">{{ save }}</span>
+		{% else %}
+			<span style="color: black;">{{ save }}</span>
+		{% endif %}
+		</b> {{ file }}</p><!-- result of saving file will be displayed here-->
+	</div>
+    
+
+    <br>
+    
+    <!-- Go back to upload page link -->
+    <a href="{{ url_for('index') }}">Go back to upload page</a>
+	</main>
+	</div>
+
+
+</body>
+</html>

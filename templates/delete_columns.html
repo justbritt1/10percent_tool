@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>Delete Columns</title>
+
+    <style>
+        .columns-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .column-section {
+            width: 45%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        ul {
+            list-style-type: disc;
+            padding-left: 20px;
+        }
+
+        h3 {
+            text-align: center;
+        }
+
+    .green-button {
+    background-color: green;  /* Sets the background color to green */
+    color: white;             /* Makes the text color white */
+    padding: 10px 20px;       /* Adds padding around the button */
+    border: none;             /* Removes the border */
+    border-radius: 5px;       /* Adds rounded corners */
+    font-size: 16px;          /* Increases the font size */
+    cursor: pointer;          /* Changes cursor to pointer on hover */
+    }
+
+    .green-button:hover {
+    background-color: darkgreen;  /* Darkens the button on hover */
+    }
+    </style>
+
+</head>
+<body>
+<div class="container">
+<main>
+    <h1>Delete Columns</h1>
+	<br>
+	<hr>
+	<p><b>Tool instructions continued below:</b></p>
+	<p>Notice that remaining columns are displayed under &#34; <b>Columns Kept</b> &#34;<br>
+	and deleted columns appear under &#34; <b>Columns Deleted</b> &#34; below<p>
+	<ol start=4>
+	<li>If no rows need to be deleted, select the &#34; <b>Get Results</b> &#34;button.<br>
+	If wanting to delete specific rows, select the &#34; <b>Delete Rows</b> &#34; button</li>
+	
+	</ol>
+	
+	<p>If &#34; <b>Get Results</b> &#34; is selected, results will appear in the next page.<br>
+	If &#34; <b>Manually Delete Rows</b> &#34; is selected, the <b>Delete Rows</b> page will open<p>
+	<hr>
+	<br>
+    <div class="columns-container">
+        <div class="column-section">
+            <h3>Columns Kept:</h3>
+            <ul>
+                {% for column in kept_columns %}
+                    <li>{{ column }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="column-section">
+            <h3>Columns Deleted:</h3>
+            <ul>
+                {% for column in deleted_columns %}
+                    <li>{{ column }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+ 
+
+    <!-- Button to delete rows -->
+    <form method="get" action="{{ url_for('delete_rows_page') }}">
+        {% for column in kept_columns %}
+            <input type="hidden" name="kept_columns" value="{{ column }}">
+        {% endfor %}
+        <input type="submit" value="Manually Delete Rows">
+    </form><br>
+    
+    <!-- Button to skip to results -->
+    <form method="post">
+        <input type="hidden" name="get_results" value="get_results">
+        <input type="submit" value="Get Results" class="green-button">
+    </form>
+    
+    <!-- Go back to upload page link --><br>
+    <a href="{{ url_for('index') }}">Go back to upload page</a>
+	</main>
+	</div>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>Delete Rows</title>
+</head>
+<body>
+<div class="container">
+<main>
+    <h1>Delete Rows</h1>
+	<br>
+	<hr>
+	<p><b>Tool instructions continued below:</b></p>
+	<p>Note that the column name that the value appears under <i>MUST</i> be selected </p>
+	<ol start=5>
+	<li>Select the column that the value appears under from the &#34; <b>Select Column</b> &#34;dropdown.</li>
+	<li>Enter the value that appears in the row you wish to delete in the &#34; <b>Value to Delete</b> &#34; field</li>
+	<li>Select the &#34; <b>Delete Rows</b> &#34; button.
+	
+	</ol>
+	<p>Results will appear in the next page</p>
+	<hr><br>
+	
+	
+	
+    <form method="post">
+        <label for="column_name">Select Column:</label>
+        <select id="column_name" name="column_name">
+            {% for column in columns %}
+                <option value="{{ column }}">{{ column }}</option>
+            {% endfor %}
+        </select>
+        <label for="value_to_delete">Value to Delete:</label>
+        <input type="text" id="value_to_delete" name="value_to_delete">
+        <input type="submit" value="Delete Rows">
+    </form>
+    
+    <!-- Go to results page link -->
+    <a href="{{ url_for('results') }}">Go to Results</a>
+	</main>
+	</div>
+</body>
+</html>
