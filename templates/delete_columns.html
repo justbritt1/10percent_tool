@@ -41,6 +41,20 @@
     .green-button:hover {
     background-color: darkgreen;  /* Darkens the button on hover */
     }
+
+    .yellow-button {
+    background-color: rgb(255, 187, 0); /* Sets the background color to yellow */
+    color: black;             /* Sets text color to black for contrast */
+    padding: 10px 20px;       /* Adds padding for better appearance */
+    border: 1px solid #ccc;   /* Optional border */
+    border-radius: 5px;       /* Rounds the corners */
+    font-size: 16px;          /* Sets font size */
+    cursor: pointer;          /* Changes cursor to pointer on hover */
+}
+
+.yellow-button:hover {
+    background-color: gold;   /* Changes color on hover */
+}
     </style>
 
 </head>
@@ -90,7 +104,7 @@
         {% for column in kept_columns %}
             <input type="hidden" name="kept_columns" value="{{ column }}">
         {% endfor %}
-        <input type="submit" value="Manually Delete Rows">
+        <input type="submit" value="Manually Delete Rows" class="yellow-button">
     </form><br>
     
     <!-- Button to skip to results -->

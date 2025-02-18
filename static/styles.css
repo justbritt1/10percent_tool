@@ -3,7 +3,7 @@ body, html {
     margin: 0;
     padding: 0;
     height: 100%;
-	weight:100%;
+	width: 100%;
     font-family: Arial, sans-serif;
 }
 
@@ -20,4 +20,11 @@ main{
     overflow-y: auto; /* Allows scrolling if content overflows */
 }
 
-
+.robot {
+    display: block;
+    margin: 20px auto;
+    max-width: 15%;
+    height: auto;
+    width: 15;
+    border-radius: 10px; /* Optional: rounded corners */
+}

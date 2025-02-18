@@ -3,30 +3,32 @@
 Program created by Brittany Smith and Hana seidi
 for the 10% census entry quiz/ Orientation activity
 '2024'
-Sorts excel and csv files 
+Sorts and cleans 10% census report files for registers office at FTCC
 
 """
-
 
 
 import os
 import pandas as pd
 import xlsxwriter
-import webview
+import csv
+import openpyxl
+import re
+#import webview
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file
 from werkzeug.utils import secure_filename
 from io import BytesIO
 from openpyxl import load_workbook
 from zipfile import BadZipFile
-import csv
-import openpyxl
+
+
 
 app = Flask(__name__)
 
 # Set a secret key for Flask
 app.secret_key = 'your_secret_key_here'
 
-webview.create_window("File manipulation", app)
+#webview.create_window("File manipulation", app)
 
 # Name of the directory for uploads
 directory_name = "uploads"
@@ -71,8 +73,11 @@ COLUMNS_TO_KEEP = [
 
 df = pd.DataFrame()  # Initialize df here
 
+# Define the correct filename pattern/ format
+FILENAME_PATTERN = re.compile(r'^\d{4}(SP|FA|SU|WI)_[A-Z]{3}_\d{3}_\d{4}_Census$', re.IGNORECASE)
+
 # Upload page with options
-@app.route('/', methods=['GET', 'POST']) 
+@app.route('/', methods=['GET', 'POST'])
 def index():
     global file_name, df
 
@@ -83,10 +88,22 @@ def index():
     ]
 
     valid_file_uploaded = False  # Flag to indicate if a valid file has been uploaded
-    
+
     if request.method == 'POST':
         if 'file' in request.files and request.files['file'].filename != '':
             file = request.files['file']
+            file_name = file.filename.rsplit('.', 1)[0]  # Extract filename without extension
+
+            if not FILENAME_PATTERN.match(file_name):
+                flash(f'Incorrect filename format: {file.filename}', 'error')
+                
+                # Save the incorrect file in the census_incorrect folder
+                incorrect_file_path = os.path.join(app.config['INCORRECT_FOLDER'], secure_filename(file.filename))
+                file.save(incorrect_file_path)
+
+                flash(f'File saved in census_incorrect folder due to incorrect filename format.', 'success')
+                return redirect(url_for('index'))  # Stop processing
+
             # Check if the file has an allowed extension
             allowed_extensions = {'csv', 'xlsx', 'xls', 'txt'}
 
@@ -95,7 +112,6 @@ def index():
                     # Handle different file formats
                     if file.filename.endswith('.csv'):
                         df_temp = pd.read_csv(file)
-                            
                     elif file.filename.endswith('.xlsx'):
                         df_temp = pd.read_excel(file)
                     elif file.filename.endswith('.xls'):  # Handle .xls files
@@ -135,12 +151,13 @@ def index():
                     # Capture file name for incorrect folder
                     file_name = file.filename.rsplit('.', 1)[0]
 
+
                     # Check if the file contains all required columns (including User)
                     if not all(column in df_temp.columns for column in required_columns):
                         missing_columns = [col for col in required_columns if col not in df_temp.columns]
                         flash(f'Missing required columns: {", ".join(missing_columns)}', 'error')
                          
-                         # Save the incorrect file to the census_incorrect folder
+                         # Save the incorrect file (missing required column names) to the census_incorrect folder
                         incorrect_file_path = os.path.join(app.config['INCORRECT_FOLDER'], secure_filename(file.filename))
                         file.save(incorrect_file_path)
                         
@@ -149,6 +166,22 @@ def index():
                             df_temp.to_csv(incorrect_file_path, index=False)
                         elif file.filename.endswith('.xlsx'):
                             df_temp.to_excel(incorrect_file_path, index=False, sheet_name='Incorrect Data')
+
+                        # Add a note to the file explaining why it was saved in the incorrect folder
+                        try:
+                            if file.filename.endswith('.xlsx'):
+                                # Add a note to the Excel file
+                                wb = load_workbook(incorrect_file_path)
+                                ws = wb.active
+                                last_row = ws.max_row
+                                ws.cell(row=last_row + 2, column=1, value=f"Note: Missing required columns: {', '.join(missing_columns)}")
+                                wb.save(incorrect_file_path)
+                            elif file.filename.endswith('.csv'):
+                                # Append a note to the CSV file
+                                with open(incorrect_file_path, 'a') as f:
+                                    f.write(f"\nNote: Missing required columns: {', '.join(missing_columns)}\n")
+                        except Exception as e:
+                            flash(f"Error adding note to incorrect file: {str(e)}", 'error')
 
                         flash(f'File saved in census_incorrect folder due to missing columns.', 'success')
 
@@ -187,13 +220,15 @@ def delete_columns_page():
     global df
     if request.method == 'POST':
         if 'get_results' in request.form:
-            # Skip to results button clicked, redirect to results page
+            # Get results button clicked, redirect to results page
             return redirect(url_for('results'))
         else:
             # Columns to keep
             kept_columns = COLUMNS_TO_KEEP
             # Columns to delete
             deleted_columns = [col for col in df.columns if col not in kept_columns]
+            
+
             
             # Filter the dataframe to keep only the specified columns
             df = df[kept_columns]
@@ -228,8 +263,10 @@ def results():
     # Remove rows where the 'User' column contains the word 'Preview' (case-insensitive)
     df_cleaned = df[~df['User'].str.contains('Preview|student', case=False, na=False)].dropna()
 
-    # Remove duplicate users based on the 'User' column
-    df_cleaned = df_cleaned.sort_values(by=['Value'], ascending=False)# sort by value
+    # Sort the dataframe by 'Username' and 'Value' columns
+    # 'Value' in descending order ensures the highest grade comes first
+    df_cleaned = df_cleaned.sort_values(by=['Username','Value'], ascending=[True, False])# sort by value
+    # Drop duplicates, keeping the first occurrence (which now has the highest 'Value')
     df_cleaned = df_cleaned.drop_duplicates(subset='Username', keep='first')
 
     # Reset the index after cleaning and dropping duplicates (optional)
@@ -237,9 +274,6 @@ def results():
         
     # Sort the DataFrame by the 'User' column
     df_sorted = df_cleaned.sort_values(by='User')
-
-    # Sort the DataFrame by the 'User' column
-    #df_sorted = df.sort_values(by='User')
 
     # Count the number of unique users
     user_count = df_sorted['Username'].nunique()
@@ -260,26 +294,30 @@ def download():
     filename = file_name
 
     # Limit "Column" values to 20 characters
-    df['Column'] = df['Column'].apply(lambda x: x[:20] if isinstance(x, str) else x)
+    #df['Column'] = df['Column'].apply(lambda x: x[:20] if isinstance(x, str) else x)
 
     census_assign1 = 'Orientation Activity'
     census_assign2 = 'Course Entry Quiz'
 
     # Find the first index where the first column has a value
-    first_valid_index = df['Date'].first_valid_index()
+    #first_valid_index = df['Date'].first_valid_index()
 
-    # Drop all rows after the first valid row that have NaN in the first column
-    df_cleaned = df.dropna(subset=['Date'], how='all', inplace=False)
-    df = df_cleaned[df_cleaned.index >= first_valid_index]
+    # Convert the 'Value' column to numeric, coercing errors to NaN
+    df['Value'] = pd.to_numeric(df['Value'], errors='coerce')
 
-    # Remove rows where the 'User' column contains the word 'Preview' (case-insensitive)
-    df_cleaned = df[~df['User'].str.contains('Preview|student', case=False, na=False)]
+    # Drop rows where 'Value' is NaN
+    df_cleaned = df.dropna(subset=['Value'])
 
-    # **Remove duplicates based on the 'User' column**
-    df_cleaned = df_cleaned.sort_values(by=['Value'], ascending=False)# sort by value
+    # Remove rows where the 'User' column contains 'Preview' or 'student' (case-insensitive)
+    df_cleaned = df_cleaned[~df_cleaned['User'].str.contains('Preview|student', case=False, na=False)]
+
+    # Sort by 'Username' and 'Value' (descending for Value to keep highest grades)
+    df_cleaned = df_cleaned.sort_values(by=['Username', 'Value'], ascending=[True, False])
+
+    # Drop duplicates, keeping the one with the highest 'Value'
     df_cleaned = df_cleaned.drop_duplicates(subset='Username', keep='first')
-    
-    # Check if the column contains only one of the two specified values
+
+   # Check if the column contains only one of the two specified values
     mask = df_cleaned['Column'].isin([census_assign1, census_assign2])
 
     # Check if all values under the column are the same
@@ -290,11 +328,9 @@ def download():
 
     # Filter rows where the grade condition is met
     # Check for a specific value
-    df_cleaned['Value'] = df_cleaned['Value'].astype(float)
     grade = df_cleaned['Value'] >=1
-    # now check
 
-    
+    # now check
     if not result: # not true
         
         # show results
@@ -381,23 +417,26 @@ def census_incorrect(filename, result):
     global df
     
     # Limit "Column" values to 20 characters
-    df['Column'] = df['Column'].apply(lambda x: x[:20] if isinstance(x, str) else x)
+    #df['Column'] = df['Column'].apply(lambda x: x[:20] if isinstance(x, str) else x)
 
    # Find the first index where the first column has a value
-    first_valid_index = df['Date'].first_valid_index()
+    #first_valid_index = df['Date'].first_valid_index()
 
-    # Drop all rows after the first valid row that have NaN in the first column
-    df_cleaned = df.dropna(subset=['Date'], how='all', inplace=False)
-    df_cleaned = df_cleaned[df_cleaned.index >= first_valid_index] 
+    # Convert the 'Value' column to numeric, coercing errors to NaN
+    df['Value'] = pd.to_numeric(df['Value'], errors='coerce')
 
+    # Drop rows where 'Value' is NaN
+    df_cleaned = df.dropna(subset=['Value'])
 
-    # Remove rows where the 'User' column contains the word 'Preview' (case-insensitive)
+    # Remove rows where the 'User' column contains 'Preview' or 'student' (case-insensitive)
     df_cleaned = df_cleaned[~df_cleaned['User'].str.contains('Preview|student', case=False, na=False)]
 
+    # Sort by 'Username' and 'Value' (descending for Value to keep highest grades)
+    df_cleaned = df_cleaned.sort_values(by=['Username', 'Value'], ascending=[True, False])
 
-    # **Remove duplicates based on the 'User' column**
-    df_cleaned = df_cleaned.sort_values(by=['Value'], ascending=False)# sort by value
+    # Drop duplicates, keeping the one with the highest 'Value'
     df_cleaned = df_cleaned.drop_duplicates(subset='Username', keep='first')
+
 
     # Reset the index (optional)
     df_cleaned.reset_index(drop=True, inplace=True)
@@ -456,6 +495,11 @@ def census_incorrect(filename, result):
     info_row = last_row + 3
     ws.cell(row=info_row, column=3, value='TOTAL STUDENT COUNT: ' + count_str)
 
+    # Add the note explaining why the file is incorrect
+    note_row = info_row + 2
+    ws.cell(row=note_row, column=1, value="Note:")
+    ws.cell(row=note_row + 1, column=1, value=result)
+
     # Set the header for printing
     ws.oddHeader.center.text = file_name
     
@@ -478,7 +522,10 @@ def delete_rows_by_value(df, column_name, value_to_delete):
     return df
 
 if __name__ == '__main__':
-    #app.run(debug=True)
+    app.run(debug=True)
 
     
-    webview.start()
+    #webview.start()
+
+
+    
