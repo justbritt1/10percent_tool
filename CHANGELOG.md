@@ -9,6 +9,7 @@ The format is based on [Semantic Versioning](https://semver.org/).
 ### Added
 - Functionality to delete "user exempted" in the **Value** column.
 - Corrected file naming format.
+- Created user manual and powerpoint for census tool.
 
 ### Changed
 - Updated UI for the dashboard.
@@ -41,3 +42,9 @@ The format is based on [Semantic Versioning](https://semver.org/).
 
 ## [Legacy Versions]
 - Legacy version details will be added from GitHub project history.
+- Deletes rows with empty cells
+- files missing required column names dump into incorrect folder.
+- Puts unique user count at top of page.
+- Deletes unwanted columns
+- Tool can delete rows as well.
+  
